@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KHAN - TENGRI — Админка</title>
+<style>
+  :root { color-scheme:dark; --bg:#090B18; --sidebar:#0D1021; --card:#11152A; --raised:#171B34; --border:#252B49; --accent:#665CE8; --accent-soft:#292545; --text:#F5F6FF; --muted:#8991B4; --green:#20C969; --red:#EF5969; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
+  .hidden { display:none !important; }
+  h1 { font-size:22px; margin:0; letter-spacing:-.025em; }
+  input, select, textarea, button { background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit; }
+  input::placeholder, textarea::placeholder { color:#737B9C; }
+  input:focus, select:focus, textarea:focus { outline:2px solid #665ce866; border-color:var(--accent); }
+  textarea { width:100%; resize:vertical; }
+  button { background:var(--accent); color:#fff; border:none; cursor:pointer; font-weight:650; min-height:40px; transition:filter .15s,transform .15s; }
+  button.secondary { background:transparent; border:1px solid var(--border); color:#D5D9EF; }
+  button.danger { background:#EF59691a; border:1px solid #EF596944; color:#FF8290; }
+  button.wa { background:var(--green); color:#052714; }
+  button:hover { filter:brightness(1.12); }
+  button:active { transform:translateY(1px); }
+  button:disabled { cursor:not-allowed; opacity:.55; filter:none; }
+  .login { max-width:390px; width:calc(100% - 32px); margin:12vh auto; background:var(--sidebar); border:1px solid var(--border); border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:14px; box-shadow:0 24px 80px #0005; }
+  .login h1 { margin-bottom:4px; }
+  .login input, .login button { width:100%; }
+  .err { color:#FF8290; font-size:13px; min-height:16px; }
+  .app-shell { min-height:100vh; }
+  .sidebar { position:fixed; z-index:30; inset:0 auto 0 0; width:264px; background:var(--sidebar); border-right:1px solid var(--border); padding:22px 15px 18px; display:flex; flex-direction:column; }
+  .brand { display:flex; align-items:center; gap:13px; padding:7px 10px 23px; border-bottom:1px solid var(--border); }
+  .brand-mark { width:42px; height:42px; display:grid; place-items:center; flex:none; border-radius:13px; background:linear-gradient(145deg,#7469F1,#5048C6); color:white; }
+  .brand-mark svg { width:29px; height:29px; }
+  .brand-name { font-size:16px; font-weight:750; letter-spacing:-.03em; }
+  .brand-caption { margin-top:4px; color:#8790B7; font-size:10px; letter-spacing:.1em; }
+  .nav-label { padding:25px 11px 10px; color:#7881A7; font-size:11px; font-weight:750; letter-spacing:.09em; }
+  .tabs { display:flex; flex-direction:column; gap:5px; }
+  .tabs button { min-height:48px; display:flex; align-items:center; gap:13px; padding:0 13px; background:transparent; border:1px solid transparent; border-radius:10px; color:#ADB4CD; text-align:left; font-size:14px; }
+  .tabs button.on { background:var(--accent-soft); border-color:#464078; color:#F4F3FF; }
+  .nav-icon { width:24px; display:inline-flex; align-items:center; justify-content:center; color:#A8A3F4; font-size:19px; }
+  .sidebar-footer { margin-top:auto; padding:18px 11px 3px; border-top:1px solid var(--border); color:#828BAF; font-size:12px; }
+  .main-shell { min-height:100vh; margin-left:264px; }
+  .topbar { height:64px; display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 32px; border-bottom:1px solid #1A1E34; background:#0B0D1A; }
+  .topbar-title { display:none; margin-right:auto; font-size:14px; font-weight:700; }
+  .menu-toggle { display:none; width:42px; min-height:42px; padding:8px; background:transparent; border:1px solid var(--border); font-size:20px; }
+  .main-content { max-width:1600px; margin:0 auto; padding:30px 34px 48px; }
+  .page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:24px; }
+  .eyebrow { margin:0 0 7px; color:#7E87AA; font-size:11px; font-weight:700; letter-spacing:.1em; }
+  #status { color:var(--muted); font-size:13px; margin:0 0 14px; }
+  .bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:15px; }
+  .bar input:not([type=checkbox]) { flex:1; min-width:180px; }
+  .chk { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:13px; cursor:pointer; }
+  .chk input { min-height:auto; accent-color:var(--accent); }
+  .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:13px; border:1px solid #1C213B; }
+  table { width:100%; min-width:720px; border-collapse:collapse; background:var(--card); font-size:13px; }
+  th, td { text-align:left; padding:13px 12px; border-bottom:1px solid #222741; vertical-align:middle; white-space:nowrap; }
+  th { color:#828BAF; background:#15192E; font-size:11px; font-weight:700; letter-spacing:.045em; text-transform:uppercase; }
+  tr:last-child td { border-bottom:none; }
+  .badge { display:inline-block; padding:4px 9px; border-radius:999px; font-size:11px; font-weight:650; }
+  .badge.pending, .badge.off { background:#665CE829; color:#B6B1FF; }
+  .badge.approved, .badge.on { background:#20C96920; color:#62E49A; }
+  .badge.rejected { background:#EF59691f; color:#FF8290; }
+  .badge.sale { background:#F3A72A20; color:#FFC86A; }
+  .actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .actions button { padding:7px 10px; font-size:12px; min-height:34px; }
+  s { color:var(--muted); }
+  .empty { padding:40px 16px; text-align:center; color:var(--muted); background:var(--card); border:1px solid #1C213B; border-radius:13px; }
+  .modal { position:fixed; inset:0; background:#04050Fbb; display:flex; align-items:flex-start; justify-content:center; padding:16px; overflow:auto; z-index:50; backdrop-filter:blur(5px); }
+  .box { background:var(--sidebar); border:1px solid var(--border); border-radius:14px; padding:20px; width:100%; max-width:560px; margin-top:4vh; box-shadow:0 24px 80px #0007; }
+  .box h2 { margin:0 0 16px; font-size:16px; }
+  .form-language { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:-4px 0 16px; padding:5px; background:#15192E; border:1px solid var(--border); border-radius:11px; }
+  .form-language button { min-height:36px; padding:7px 10px; font-size:13px; }
+  .form-language button.active { background:var(--accent); color:#fff; }
+  .form-en .lang-ru { display:none; }
+  .form-ru .lang-en { display:none; }
+  .translation-tools { margin:-4px 0 16px; padding:12px; background:#15192E; border:1px solid var(--border); border-radius:10px; }
+  .translation-tools button { width:100%; }
+  .translation-tools p { margin:8px 0 0; color:var(--muted); font-size:12px; line-height:1.4; }
+  .box label { display:block; font-size:12px; color:#A6AEC8; margin-bottom:12px; }
+  .box label input:not([type=checkbox]), .box label select { width:100%; margin-top:4px; }
+  .box label textarea { margin-top:4px; }
+  .box label input[type=file] { width:100%; margin-top:6px; }
+  .photo-preview { display:block; width:100%; max-height:220px; object-fit:cover; border-radius:9px; margin-top:10px; }
+  .box label.chk { display:flex; color:var(--text); }
+  .row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .row button { flex:1; min-width:110px; }
+
+  .sidebar-backdrop { display:none; }
+  @media (max-width: 900px) {
+    .sidebar { width:242px; }
+    .main-shell { margin-left:242px; }
+    .main-content { padding:26px 22px 40px; }
+    .topbar { padding:0 22px; }
+  }
+  @media (max-width: 700px) {
+    .sidebar { width:min(290px,84vw); transform:translateX(-102%); transition:transform .22s ease; box-shadow:18px 0 50px #0006; }
+    .app-shell.nav-open .sidebar { transform:translateX(0); }
+    .sidebar-backdrop { position:fixed; z-index:25; inset:0; display:block; background:#02030bbb; opacity:0; pointer-events:none; transition:opacity .22s; }
+    .app-shell.nav-open .sidebar-backdrop { opacity:1; pointer-events:auto; }
+    .main-shell { margin-left:0; }
+    .topbar { height:58px; justify-content:space-between; gap:9px; padding:0 14px; }
+    .topbar-title, .menu-toggle { display:flex; align-items:center; justify-content:center; }
+    .main-content { padding:23px 14px 36px; }
+    .page-heading { margin-bottom:19px; }
+    h1 { font-size:21px; }
+    .bar { align-items:stretch; flex-direction:column; gap:10px; }
+    .bar input:not([type=checkbox]) { width:100%; min-width:0; }
+    .chk { align-items:flex-start; line-height:1.5; }
+    .table-wrap { overflow:visible; border:0; }
+    table { min-width:0; border-collapse:separate; border-spacing:0 10px; background:transparent; }
+    thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+    tbody { display:grid; gap:10px; }
+    tr { display:grid; gap:0; padding:4px 13px; background:var(--card); border:1px solid #222741; border-radius:12px; }
+    td { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; white-space:normal; padding:9px 0; border-bottom:1px solid #222741; text-align:right; overflow-wrap:anywhere; }
+    td::before { content:attr(data-label); flex:none; color:#858EAF; font-size:10px; font-weight:700; letter-spacing:.04em; text-align:left; text-transform:uppercase; }
+    td.actions { justify-content:flex-start; flex-wrap:wrap; padding:11px 0 7px; }
+    td.actions::before { display:none; }
+    .actions button { flex:1 1 auto; }
+    .box { padding:17px; margin-top:0; border-radius:14px; align-self:flex-end; max-height:92dvh; overflow:auto; }
+    .modal { align-items:flex-end; padding:10px; }
+  }
+  @media (max-width: 380px) {
+    .main-content { padding-left:11px; padding-right:11px; }
+    .actions button { width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login" class="login hidden">
+  <div class="brand" style="padding:0 0 18px;border:0">
+    <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M3 25.5 11.5 11l4.1 6.2 3.1-4.7L29 25.5H3Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="m8.2 25.5 5.1-8.7 2.3 3.5 2.1-3.2 6.2 8.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="brand-name">KHAN - TENGRI</div><div class="brand-caption">ПАНЕЛЬ УПРАВЛЕНИЯ</div></div>
+  </div>
+  <div style="color:var(--muted);font-size:13px">Вход в админ-панель</div>
+  <input id="pwd" type="password" placeholder="Пароль" autocomplete="current-password" />
+  <button id="loginBtn">Войти</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<div id="app" class="app-shell hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M3 25.5 11.5 11l4.1 6.2 3.1-4.7L29 25.5H3Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="m8.2 25.5 5.1-8.7 2.3 3.5 2.1-3.2 6.2 8.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="brand-name">KHAN - TENGRI</div><div class="brand-caption">ПАНЕЛЬ УПРАВЛЕНИЯ</div></div>
+    </div>
+    <div class="nav-label">РАЗДЕЛЫ</div>
+    <nav class="tabs" aria-label="Разделы админки">
+      <button data-tab="applications"><span class="nav-icon" aria-hidden="true">▤</span>Брони</button>
+      <button data-tab="courses"><span class="nav-icon" aria-hidden="true">▧</span>Туры</button>
+      <button data-tab="teachers"><span class="nav-icon" aria-hidden="true">♙</span>Команда</button>
+    </nav>
+    <div class="sidebar-footer">KHAN - TENGRI · Панель управления</div>
+  </aside>
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+  <div class="main-shell">
+    <header class="topbar">
+      <button id="menuToggle" class="menu-toggle secondary" aria-label="Открыть меню" aria-expanded="false">☰</button>
+      <div class="topbar-title">KHAN - TENGRI · Админка</div>
+      <button class="secondary" id="logout">Выйти</button>
+    </header>
+    <main class="main-content">
+      <div class="page-heading">
+        <div><p class="eyebrow">ПАНЕЛЬ УПРАВЛЕНИЯ</p><h1 id="pageTitle">Брони</h1></div>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+      <div id="content"></div>
+    </main>
+  </div>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="box">
+    <h2 id="mTitle"></h2>
+    <div id="mLanguage" class="form-language hidden" aria-label="Язык полей">
+      <button type="button" id="mLangRu" class="active">Русский</button>
+      <button type="button" id="mLangEn" class="secondary">English</button>
+    </div>
+    <div id="mTranslateWrap" class="translation-tools hidden">
+      <button id="mTranslate" type="button" class="secondary">Обновить перевод</button>
+      <p>Перевод заполняется при первом переходе на English. Здесь его можно проверить и исправить.</p>
+    </div>
+    <div id="mFields"></div>
+    <div id="mErr" class="err"></div>
+    <div class="row"><button id="mSave">Сохранить</button><button class="secondary" id="mCancel">Отмена</button></div>
+  </div>
+</div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  const TRANSLATION_PAIRS = {
+    courses: [['title', 'titleEn'], ['destination', 'destinationEn'], ['description', 'descriptionEn'], ['about', 'aboutEn'], ['groupSize', 'groupSizeEn'], ['itinerary', 'itineraryEn'], ['included', 'includedEn'], ['highlights', 'highlightsEn']],
+    teachers: [['role', 'roleEn'], ['experience', 'experienceEn'], ['languages', 'languagesEn'], ['regions', 'regionsEn'], ['bio', 'bioEn'], ['about', 'aboutEn']],
+  };
+  const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const API = window.location.origin;
+  const ENDPOINT = { applications: '/api/bookings', courses: '/api/admin/tours', teachers: '/api/admin/guides' };
+  const RESPONSE_KEY = { applications: 'bookings', courses: 'tours', teachers: 'guides' };
+  const TAB_LABEL = { applications: 'Брони', courses: 'Туры', teachers: 'Команда' };
+  const STATUS = { pending: 'ожидает', approved: 'одобрена', rejected: 'отклонена' };
+  const LEVELS = [['easy','Лёгкий'],['medium','Средний'],['hard','Сложный']];
+  const ICONS = [['mountain','Горы'],['water','Вода/озеро'],['tent','Юрта/кемпинг'],['rideshare','Внедорожник'],['snow','Зима/лыжи'],['plant','Природа/заповедник']];
+
+  // [ключ, подпись, тип, варианты]  типы: text, textarea, number, date, select, checkbox, list, lines, image
+  const SCHEMA = {
+    courses: { one: 'тур', fields: [
+      ['title','Название тура (RU)','text'],
+      ['titleEn','Название тура (EN) — необязательно','text'],
+      ['photo','Фото тура (JPG, PNG или WebP, исходник до 5 МБ)','image'],
+      ['destination','Направление, например: Иссык-Кульская область (RU)','text'],
+      ['destinationEn','Направление (EN)','text'],
+      ['description','Короткое описание в списке (RU)','textarea'],
+      ['descriptionEn','Короткое описание (EN)','textarea'],
+      ['about','Подробное описание в окне тура (RU)','textarea'],
+      ['aboutEn','Подробное описание (EN)','textarea'],
+      ['duration','Длительность, например: 3 дня / 2 ночи','text'],
+      ['difficultyKey','Сложность','select',LEVELS],
+      ['groupSize','Размер группы, например: до 12 человек (RU)','text'],
+      ['groupSizeEn','Размер группы (EN)','text'],
+      ['totalSeats','Всего мест на тур (0 — не отслеживать)','number'],
+      ['price','Цена за человека (сом)','number'],
+      ['discountPercent','Скидка, % (0 — нет скидки)','number'],
+      ['discountEndsAt','Скидка действует до (пусто — без срока)','date'],
+      ['itinerary','Программа по дням, каждый пункт с новой строки (RU)','lines'],
+      ['itineraryEn','Программа по дням (EN)','lines'],
+      ['included','Что входит в стоимость, через запятую (RU)','list'],
+      ['includedEn','Что входит в стоимость (EN)','list'],
+      ['highlights','Короткие теги для карточки, через запятую (RU)','list'],
+      ['highlightsEn','Короткие теги (EN)','list'],
+      ['active','Показывать на сайте','checkbox'],
+    ]},
+    teachers: { one: 'сотрудника', fields: [
+      ['name','Имя и фамилия (одно на оба языка)','text'],
+      ['photo','Фотография (JPG, PNG или WebP, исходник до 5 МБ)','image'],
+      ['role','Роль, например: Старший гид (RU)','text'],
+      ['roleEn','Роль (EN)','text'],
+      ['experience','Опыт, например: 5+ лет (RU)','text'],
+      ['experienceEn','Опыт (EN)','text'],
+      ['languages','Языки, через запятую (RU)','list'],
+      ['languagesEn','Языки (EN) — например: Russian, English','list'],
+      ['regions','Направления, через запятую (RU)','list'],
+      ['regionsEn','Направления (EN)','list'],
+      ['bio','Краткая информация (RU)','textarea'],
+      ['bioEn','Краткая информация (EN)','textarea'],
+      ['about','Полная информация (RU)','textarea'],
+      ['aboutEn','Полная информация (EN)','textarea'],
+      ['active','Показывать на сайте','checkbox'],
+    ]},
+  };
+
+  let token = localStorage.getItem('ihsan_token') || '';
+  let tab = 'applications';
+  let editing = null;
+  const data = { applications: [], courses: [], teachers: [] };
+
+  async function api(path, opts = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(API + path, { ...opts, headers });
+    let body = {};
+    try { body = await res.json(); } catch (e) {}
+    if (res.status === 401 && path !== '/api/admin/login') { logout(); throw new Error('Сессия истекла, войдите снова'); }
+    if (!res.ok || body.success === false) throw new Error(body.error || (body.errors || []).join(', ') || 'Ошибка ' + res.status);
+    return body;
+  }
+
+  // ---- Вход / выход ----
+  async function doLogin() {
+    $('#loginErr').textContent = '';
+    try {
+      const r = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#pwd').value }) });
+      token = r.token; localStorage.setItem('ihsan_token', token); $('#pwd').value = '';
+      start();
+    } catch (e) { $('#loginErr').textContent = e.message; }
+  }
+  function logout() {
+    token = ''; localStorage.removeItem('ihsan_token');
+    closeNav();
+    $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
+  }
+  function start() {
+    $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+    load();
+  }
+  $('#loginBtn').addEventListener('click', doLogin);
+  $('#pwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+  $('#logout').addEventListener('click', logout);
+  $('#menuToggle').addEventListener('click', () => setNavOpen(!$('#app').classList.contains('nav-open')));
+  $('#sidebarBackdrop').addEventListener('click', closeNav);
+
+  function setNavOpen(open) {
+    $('#app').classList.toggle('nav-open', open);
+    $('#menuToggle').setAttribute('aria-expanded', String(open));
+    $('#menuToggle').setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+  }
+  function closeNav() { setNavOpen(false); }
+
+  // ---- Вкладки ----
+  document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; closeNav(); load(); }));
+
+  async function load() {
+    document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    $('#pageTitle').textContent = TAB_LABEL[tab];
+    $('#status').textContent = 'Загрузка...'; $('#content').innerHTML = '';
+    try {
+      const r = await api(ENDPOINT[tab]);
+      data[tab] = r[RESPONSE_KEY[tab]] || [];
+      $('#status').textContent = '';
+      $('#content').innerHTML = tab === 'applications' ? renderApplications() : renderCatalog(tab);
+    } catch (e) { $('#status').textContent = e.message; }
+  }
+
+  const table = (heads, rows) => `<div class="table-wrap"><table><thead><tr>${heads.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+
+  function renderApplications() {
+    const wa = localStorage.getItem('ihsan_my_wa') || '';
+    const openWa = localStorage.getItem('ihsan_open_wa') !== 'false';
+    const bar = `<div class="bar"><input id="myWa" placeholder="Ваш WhatsApp: 996XXXXXXXXX" value="${esc(wa)}">
+      <label class="chk"><input type="checkbox" id="openWa" ${openWa ? 'checked' : ''}> При «Одобрить» открывать WhatsApp клиента</label></div>`;
+    if (!data.applications.length) return bar + '<div class="empty">Броней пока нет</div>';
+    const rows = data.applications.map((a) => {
+      const decided = a.status !== 'pending';
+      return `<tr>
+      <td data-label="Имя">${esc(a.name)}</td><td data-label="Телефон">+${esc(a.phone)}</td><td data-label="Тур">${esc(a.tour)}</td>
+      <td data-label="Статус"><span class="badge ${a.status}">${STATUS[a.status] || a.status}</span></td>
+      <td data-label="Дата">${new Date(a.createdAt).toLocaleString('ru-RU')}</td>
+      <td class="actions" data-label="Действия">
+        ${decided ? '' : `<button data-act="approve" data-id="${a._id}">✅ Одобрить</button><button class="secondary" data-act="reject" data-id="${a._id}">❌</button>`}
+        <button class="wa" data-act="wa-client" data-id="${a._id}">💬 Клиенту</button>
+        <button class="secondary" data-act="wa-me" data-id="${a._id}">📤 Мне</button>
+        ${decided ? `<button class="danger" data-act="del-app" data-id="${a._id}">🗑 Удалить</button>` : ''}
+      </td></tr>`;
+    }).join('');
+    return bar + table(['Имя','Телефон','Тур','Статус','Дата',''], rows);
+  }
+
+  const money = (n) => Number(n).toLocaleString('ru-RU') + ' сом';
+
+  function renderCatalog(kind) {
+    const items = data[kind];
+    const add = `<div class="bar"><button data-act="add">＋ Добавить ${SCHEMA[kind].one}</button>
+      ${items.length ? '' : '<button class="secondary" data-act="seed">Загрузить примеры</button>'}</div>`;
+    if (!items.length) return add + '<div class="empty">Список пуст</div>';
+    const buttons = (i) => `<td class="actions"><button data-act="edit" data-id="${i._id}">✏️ Изменить</button><button class="danger" data-act="del" data-id="${i._id}">🗑 Удалить</button></td>`;
+    const shown = (i) => `<span class="badge ${i.active ? 'on' : 'off'}">${i.active ? 'на сайте' : 'скрыт'}</span>`;
+    if (kind === 'courses') {
+      const rows = items.map((c) => `<tr><td data-label="Тур">${esc(c.title)}</td>
+        <td data-label="Цена">${c.discountActive ? `<s>${money(c.price)}</s> ${money(c.finalPrice)}` : money(c.price)}</td>
+        <td data-label="Скидка">${c.discountActive ? `<span class="badge sale">-${c.discountPercent}%${c.discountEndsAt ? ' до ' + new Date(c.discountEndsAt).toLocaleDateString('ru-RU') : ''}</span>` : '—'}</td>
+        <td data-label="Места">${c.totalSeats > 0 ? `${c.seatsLeft} из ${c.totalSeats}` : 'не отслеживаются'}</td>
+        <td data-label="Статус">${shown(c)}</td>${buttons(c)}</tr>`).join('');
+      return add + table(['Тур','Цена','Скидка','Места','Статус',''], rows);
+    }
+    const rows = items.map((t) => `<tr><td data-label="Имя">${esc(t.name)}</td><td data-label="Роль">${esc(t.role)}</td><td data-label="Языки">${esc((t.languages || []).join(', '))}</td><td data-label="Статус">${shown(t)}</td>${buttons(t)}</tr>`).join('');
+    return add + table(['Имя','Роль','Языки','Статус',''], rows);
+  }
+
+  // ---- Клики в таблицах ----
+  $('#content').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const { act, id } = b.dataset;
+    if (act === 'approve') return approve(id);
+    if (act === 'reject') return setStatus(id, 'rejected');
+    if (act === 'wa-client') return waClient(id);
+    if (act === 'wa-me') return waMe(id);
+    if (act === 'del-app') return removeApplication(id);
+    if (act === 'add') return openForm(tab, null);
+    if (act === 'edit') return openForm(tab, data[tab].find((x) => x._id === id));
+    if (act === 'del') return removeItem(id);
+    if (act === 'seed') return seed();
+  });
+  $('#content').addEventListener('change', (e) => {
+    if (e.target.id === 'myWa') localStorage.setItem('ihsan_my_wa', e.target.value.trim());
+    if (e.target.id === 'openWa') localStorage.setItem('ihsan_open_wa', e.target.checked ? 'true' : 'false');
+  });
+
+  // ---- Заявки ----
+  const waLink = (phone, text) => 'https://wa.me/' + String(phone).replace(/\D/g, '') + '?text=' + encodeURIComponent(text);
+  const findApp = (id) => data.applications.find((x) => x._id === id);
+
+  async function approve(id) {
+    const a = findApp(id);
+    const win = localStorage.getItem('ihsan_open_wa') !== 'false' ? window.open('', '_blank') : null; // открываем до запроса
+    try {
+      const r = await api('/api/bookings/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status: 'approved' }) });
+      if (win) win.location.href = waLink(a.phone, 'Здравствуйте, ' + a.name + '! Ваша бронь тура «' + a.tour + '» в KHAN - TENGRI подтверждена. Мы свяжемся с вами, чтобы согласовать детали поездки.');
+      if (r.sms && r.sms.attempted) alert(r.sms.ok ? 'SMS клиенту отправлена.\n' + String(r.sms.raw || '').slice(0, 300) : 'SMS клиенту НЕ отправилась:\n' + r.sms.error);
+      load();
+    } catch (err) { if (win) win.close(); alert(err.message); }
+  }
+  async function setStatus(id, status) {
+    try { await api('/api/bookings/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status }) }); load(); }
+    catch (err) { alert(err.message); }
+  }
+  async function removeApplication(id) {
+    if (!confirm('Удалить эту бронь безвозвратно?')) return;
+    try { await api('/api/bookings/' + id, { method: 'DELETE' }); load(); } catch (err) { alert(err.message); }
+  }
+  function waClient(id) {
+    const a = findApp(id);
+    window.open(waLink(a.phone, 'Здравствуйте, ' + a.name + '! Это KHAN - TENGRI. Вы оставили заявку на тур «' + a.tour + '». Когда вам удобно поговорить?'), '_blank');
+  }
+  function waMe(id) {
+    const me = (localStorage.getItem('ihsan_my_wa') || '').trim();
+    if (!me) return alert('Впишите свой номер WhatsApp в поле сверху');
+    const a = findApp(id);
+    window.open(waLink(me, 'Бронь KHAN - TENGRI\nИмя: ' + a.name + '\nТелефон: +' + a.phone + '\nТур: ' + a.tour + '\nЧеловек: ' + a.peopleCount + (a.message ? '\nСообщение: ' + a.message : '')), '_blank');
+  }
+
+  // ---- Курсы / учителя: форма ----
+  function fieldHtml([k, label, type, opts], v) {
+    const id = 'f_' + k;
+    if (type === 'image') return `<label>${label}<input type="file" id="${id}_file" accept="image/jpeg,image/png,image/webp">
+      <input type="hidden" id="${id}" value="${esc(v)}">${v ? `<img class="photo-preview" id="${id}_preview" src="${esc(v)}" alt="Фото сотрудника">` : `<img class="photo-preview hidden" id="${id}_preview" alt="Фото сотрудника">`}</label>`;
+    if (type === 'textarea') return `<label>${label}<textarea id="${id}" rows="3">${esc(v)}</textarea></label>`;
+    if (type === 'lines') return `<label>${label}<textarea id="${id}" rows="5">${esc((v || []).join('\n'))}</textarea></label>`;
+    if (type === 'list') return `<label>${label}<input id="${id}" value="${esc((v || []).join(', '))}"></label>`;
+    if (type === 'select') return `<label>${label}<select id="${id}">${opts.map(([val, text]) => `<option value="${val}" ${val === v ? 'selected' : ''}>${text}</option>`).join('')}</select></label>`;
+    if (type === 'checkbox') return `<label class="chk"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}> ${label}</label>`;
+    if (type === 'date') return `<label>${label}<input type="date" id="${id}" value="${v ? String(v).slice(0, 10) : ''}"></label>`;
+    return `<label>${label}<input type="${type}" id="${id}" value="${esc(v)}"></label>`;
+  }
+  let formLanguage = 'ru';
+  function renderField([key, label, type, options], value) {
+    const id = 'f_' + key;
+    const language = key.endsWith('En') ? 'en' : 'ru';
+    const wrap = (content) => `<div class="form-field lang-${language}">${content}</div>`;
+    if (type === 'image') return wrap(`<label>${label}<input type="file" id="${id}_file" accept="image/jpeg,image/png,image/webp">
+      <input type="hidden" id="${id}" value="${esc(value)}">${value ? `<img class="photo-preview" id="${id}_preview" src="${esc(value)}" alt="Фото">` : `<img class="photo-preview hidden" id="${id}_preview" alt="Фото">`}</label>`);
+    if (type === 'textarea') return wrap(`<label>${label}<textarea id="${id}" rows="3">${esc(value)}</textarea></label>`);
+    if (type === 'lines') return wrap(`<label>${label}<textarea id="${id}" rows="5">${esc((value || []).join('\n'))}</textarea></label>`);
+    if (type === 'list') return wrap(`<label>${label}<input id="${id}" value="${esc((value || []).join(', '))}"></label>`);
+    if (type === 'select') return wrap(`<label>${label}<select id="${id}">${options.map(([optionValue, text]) => `<option value="${optionValue}" ${optionValue === value ? 'selected' : ''}>${text}</option>`).join('')}</select></label>`);
+    if (type === 'checkbox') return wrap(`<label class="chk"><input type="checkbox" id="${id}" ${value ? 'checked' : ''}> ${label}</label>`);
+    if (type === 'date') return wrap(`<label>${label}<input type="date" id="${id}" value="${value ? String(value).slice(0, 10) : ''}"></label>`);
+    return wrap(`<label>${label}<input type="${type}" id="${id}" value="${esc(value)}"></label>`);
+  }
+  function syncFormLanguage() {
+    const isEnglish = formLanguage === 'en';
+    $('#mFields').classList.toggle('form-en', isEnglish);
+    $('#mFields').classList.toggle('form-ru', !isEnglish);
+    $('#mLangRu').className = isEnglish ? 'secondary' : 'active';
+    $('#mLangEn').className = isEnglish ? 'active' : 'secondary';
+    $('#mTranslateWrap').classList.toggle('hidden', !isEnglish || !TRANSLATION_PAIRS[editing?.kind]);
+  }
+  function switchFormLanguage(nextLanguage) {
+    formLanguage = nextLanguage;
+    syncFormLanguage();
+    if (nextLanguage !== 'en' || !TRANSLATION_PAIRS[editing?.kind]) return;
+    const hasTranslation = TRANSLATION_PAIRS[editing.kind].some(([, enKey]) => String($('#f_' + enKey)?.value || '').trim());
+    const hasSource = TRANSLATION_PAIRS[editing.kind].some(([ruKey]) => String($('#f_' + ruKey)?.value || '').trim());
+    if (!hasTranslation && hasSource) $('#mTranslate').click();
+  }
+  function openForm(kind, item) {
+    editing = { kind, id: item ? item._id : null };
+    const base = item || { active: true, order: 0, price: 0, discountPercent: 0 };
+    $('#mTitle').textContent = (item ? 'Изменить ' : 'Добавить ') + SCHEMA[kind].one;
+    $('#mFields').innerHTML = SCHEMA[kind].fields.map((f) => renderField(f, base[f[0]])).join('');
+    formLanguage = 'ru';
+    $('#mLanguage').classList.toggle('hidden', !TRANSLATION_PAIRS[kind]);
+    syncFormLanguage();
+    $('#mTranslate').disabled = false;
+    $('#mTranslate').textContent = 'Обновить перевод';
+    $('#mErr').textContent = '';
+    $('#modal').classList.remove('hidden');
+  }
+  const closeForm = () => $('#modal').classList.add('hidden');
+  $('#mCancel').addEventListener('click', closeForm);
+  $('#mTranslate').addEventListener('click', async () => {
+    if (!editing || !TRANSLATION_PAIRS[editing.kind]) return;
+    const source = Object.fromEntries(TRANSLATION_PAIRS[editing.kind].map(([ruKey]) => [ruKey, $('#f_' + ruKey).value || '']));
+    if (!Object.values(source).some((value) => value.trim())) {
+      $('#mErr').textContent = 'Сначала заполните хотя бы одно поле на русском.';
+      return;
+    }
+    const button = $('#mTranslate');
+    button.disabled = true;
+    $('#mSave').disabled = true;
+    button.textContent = 'Переводим…';
+    $('#mErr').textContent = '';
+    try {
+      const result = await api('/api/admin/translate/english', {
+        method: 'POST', body: JSON.stringify({ kind: editing.kind, source }),
+      });
+      Object.entries(result.translations || {}).forEach(([key, value]) => {
+        const input = $('#f_' + key);
+        if (input) input.value = value;
+      });
+    } catch (err) {
+      $('#mErr').textContent = err.message;
+    } finally {
+      button.disabled = false;
+      $('#mSave').disabled = false;
+      button.textContent = 'Перевести на английский';
+    }
+  });
+  let photoUploading = false;
+  $('#mFields').addEventListener('change', async (e) => {
+    if (e.target.id !== 'f_photo_file' || !e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    if (file.size > 5 * 1024 * 1024) { $('#mErr').textContent = 'Размер исходной фотографии не должен превышать 5 МБ'; return; }
+    photoUploading = true;
+    $('#mErr').textContent = '';
+    try {
+      const image = await createImageBitmap(file);
+      let width = Math.max(1, Math.round(image.width * Math.min(1, 1400 / Math.max(image.width, image.height))));
+      let height = Math.max(1, Math.round(image.height * Math.min(1, 1400 / Math.max(image.width, image.height))));
+      let quality = 0.86;
+      let dataUrl = '';
+      try {
+        while (true) {
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('Не удалось обработать фотографию');
+          context.fillStyle = '#fff'; context.fillRect(0, 0, width, height);
+          context.drawImage(image, 0, 0, width, height);
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+          if (!blob) throw new Error('Не удалось обработать фотографию');
+          if (blob.size <= 350 * 1024) {
+            dataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(new Error('Не удалось прочитать обработанную фотографию'));
+              reader.readAsDataURL(blob);
+            });
+            break;
+          }
+          if (Math.max(width, height) < 320) break;
+          if (quality > 0.55) quality -= 0.1;
+          else { width = Math.round(width * 0.85); height = Math.round(height * 0.85); quality = 0.8; }
+        }
+      } finally { image.close(); }
+      if (!dataUrl) throw new Error('Не удалось уменьшить фотографию до допустимого размера');
+      const [header, data] = String(dataUrl).split(',');
+      const contentType = header.match(/^data:(image\/(?:jpeg|png|webp));base64$/)?.[1];
+      if (!contentType || !data) throw new Error('Поддерживаются только JPG, PNG и WebP');
+      const result = await api('/api/admin/uploads/guide-photo', {
+        method: 'POST',
+        body: JSON.stringify({ contentType, data }),
+      });
+      $('#f_photo').value = result.url;
+      $('#f_photo_preview').src = result.url;
+      $('#f_photo_preview').classList.remove('hidden');
+    } catch (err) { $('#mErr').textContent = err.message; }
+    finally { photoUploading = false; }
+  });
+
+  $('#mSave').addEventListener('click', async () => {
+    if (photoUploading) { $('#mErr').textContent = 'Дождитесь завершения загрузки фотографии'; return; }
+    const { kind, id } = editing;
+    const body = {};
+    SCHEMA[kind].fields.forEach(([k, , type]) => {
+      const el = $('#f_' + k);
+      if (type === 'checkbox') body[k] = el.checked;
+      else if (type === 'lines') body[k] = el.value.split('\n').map((s) => s.trim()).filter(Boolean);
+      else if (type === 'list') body[k] = el.value.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+      else body[k] = el.value;
+    });
+    try {
+      await api(ENDPOINT[kind] + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
+      closeForm(); load();
+    } catch (err) { $('#mErr').textContent = err.message; }
+  });
+
+  async function removeItem(id) {
+    if (!confirm('Удалить безвозвратно?')) return;
+    try { await api(ENDPOINT[tab] + '/' + id, { method: 'DELETE' }); load(); } catch (err) { alert(err.message); }
+  }
+  async function seed() {
+    const kind = { courses: 'tours', teachers: 'guides' }[tab];
+    try { await api('/api/admin/seed/' + kind, { method: 'POST' }); load(); } catch (err) { alert(err.message); }
+  }
+
+  if (token) start(); else $('#login').classList.remove('hidden');
+</script>
+</body>
+</html>
